@@ -22,16 +22,32 @@ module PBar
     MAX_PERCENTS = 100
     
     attr_reader :listeners
-    
-    def initialize(params)
-      @total = params[:total]
+
+    #TODO: Write tests for assigning @timer to a default value?
+    #TODO: Write tests for block passing:
+    #No block passed
+    #Block of the 0 arity passed
+    #Block of arity 1 passed
+    #Block of the wrong arity passed  
+    def self.progress(total, timer = Timer.new, &block)
+      progress = Progress.new(total, timer)
+      if block_given?
+        block.arity < 1 ? progress.instance_eval(&block) : block.call(progress)
+      else
+        progress.listeners << PBar::ConsoleReporter.new
+      end
+      progress
+    end
+      
+    def initialize(total, timer)
+      @total = total
       raise if @total <= 0
-      @timer = params[:timer]
+      @timer = timer
 
       @done = 0
       @listeners = []
     end
-  
+    
     def start
       @timer.start
     end
@@ -40,10 +56,23 @@ module PBar
       raise if done <= 0
       if @done + done <= @total
         @done = @done + done
+        listeners.each {|listener| listener.onStatus(getStatus)}
       end
-      listeners.each {|listener| listener.onStatus(getStatus)}
+      
+      if @done >= @total
+        #TODO: Test this branch, test that it is called when all the progress have been made
+        #@done = @total
+        #@done > @total
+        #Is not called when @done < @total
+        listeners.each {|listener| listener.onFinished}
+      end
     end
 
+    #TODO: Test this method, how does in interact with other methods and their potential invokations?
+    def abort
+      listeners.each {|listener| listener.onAborted}
+    end
+    
     def percentDone
       @done.to_f / @total.to_f * MAX_PERCENTS.to_f
     end
@@ -145,7 +174,8 @@ module PBar
     BACKSPACE = "\b"
     BLANK = " "
     
-    def initialize(statusRenderer, output=STDOUT)
+    #TODO: Get rid of the two default parameters. Is using a map a better option?
+    def initialize(statusRenderer = ConsoleStatusRenderer.new, output = STDOUT)
       @statusRenderer = statusRenderer 
       @output = output
       @symbolsToErase = 0
@@ -153,6 +183,16 @@ module PBar
 
     def onStatus(status)
       print(status)
+    end
+    
+    #TODO: Test this method?
+    def onFinished
+      clearCurrentLine
+    end
+    
+    #TODO: Test this method?
+    def onAborted
+      @output.print("Aborted!")
     end
     
     def print(status)

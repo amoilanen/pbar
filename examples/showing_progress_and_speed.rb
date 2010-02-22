@@ -19,23 +19,25 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
 
 require 'pbar/progress_bar'
 
+def doSomeWork
+  sleep 1
+end
+
 unitName = "KBit"
 unitsPerItem = 1024
 
-items = 10
+totalWorkUnits = 10
 
-bar = PBar::Progress.new(:total => items, :timer => PBar::Timer.new)
-renderer = PBar::ConsoleStatusRenderer.new
-renderer.showSpeed(unitName, unitsPerItem)
-
-consoleReporter = PBar::ConsoleReporter.new(renderer)
-bar.listeners << consoleReporter
-
-bar.start
-sleep 1
-
-items.times do |i|
-  bar.increment
-  sleep 1
+progress = PBar::Progress.progress(totalWorkUnits) do |p|
+  renderer = PBar::ConsoleStatusRenderer.new
+  renderer.showSpeed(unitName, unitsPerItem)
+  p.listeners << PBar::ConsoleReporter.new(renderer)
 end
-consoleReporter.clearCurrentLine
+
+progress.start
+doSomeWork
+
+totalWorkUnits.times do
+  doSomeWork
+  progress.increment
+end

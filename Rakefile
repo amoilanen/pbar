@@ -9,3 +9,5 @@ Echoe.new('pbar', '0.1') do |task|
   task.ignore_pattern = []
   task.development_dependencies = []
 end
+
+#TODO: Add a task to launch all examples

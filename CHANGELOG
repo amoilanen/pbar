@@ -15,15 +15,20 @@
 - Speed calculation is now done in status instead of progress, small re-factoring and re-design
 - Using 'flexmock' to mock out dependencies in tests where it makes sense
 
+05/28/2011
+
+- Added more examples, one of them for a concurrent update of the progress from multiple threads
+- Made the classes use some Ruby specific features in order for them to look less Java-like
+- Usability for the client code: shortcuts and syntactic sugar.Too many classes needed to be constructed
+in order to use the library and the API was too low level 
+
 TODO:
 
-- Synchronization support so that the progress can be updated and rendered from multiple threads of execution
-
-- Make the classes use some Ruby specific features in order for them to look less Java-like
-- Usability for the client code: shortcuts and syntactic sugar. At the moment too many classes should be constructed
-and the API is too low level
-
 - Make ConsoleReporter report on Windows
+- How to make the width of the progress bar being showed vary in width? For example, 
+it should be possible to have a bar with the width of a screen, half of the width of a screen
+
 - Think about managing dependencies for a gem. Maybe a separate .gemspec file is needed if echoe
 does not work well with dependencies? To be investigated
+- Make a separate Rake task that will run all the examples
 - Write an rDoc file
