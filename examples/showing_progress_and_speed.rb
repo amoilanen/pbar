@@ -31,7 +31,7 @@ totalWorkUnits = 10
 progress = PBar::Progress.progress(totalWorkUnits) do |p|
   renderer = PBar::ConsoleStatusRenderer.new
   renderer.showSpeed(unitName, unitsPerItem)
-  p.listeners << PBar::ConsoleReporter.new(renderer)
+  p.listeners << PBar::ConsoleReporter.new(:statusRenderer => renderer)
 end
 
 progress.start

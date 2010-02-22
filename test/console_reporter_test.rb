@@ -31,7 +31,7 @@ class ConsoleReporterTest < Test::Unit::TestCase
   def setup
     @output = StringIO.new
     @renderer = IdentityRenderer.new
-    @reporter = PBar::ConsoleReporter.new(@renderer, @output)
+    @reporter = PBar::ConsoleReporter.new(:statusRenderer => @renderer, :output => @output)
     backspace = PBar::ConsoleReporter::BACKSPACE
     blank = PBar::ConsoleReporter::BLANK
     @status = "abc"
@@ -70,5 +70,19 @@ class ConsoleReporterTest < Test::Unit::TestCase
     @reporter.clearCurrentLine
     
     assert_equal("", @output.string)
+  end
+  
+  def test_when_onFinished_is_called_then_last_line_is_erased
+    @reporter.print(@status)
+    @reporter.onFinished
+    
+    assert_equal(@status + @erasingString, @output.string)
+  end
+  
+  def test_when_onAborted_is_called_then_aborted_string_is_printed
+    @reporter.print(@status)
+    @reporter.onAborted
+    
+    assert_equal(@status + PBar::ConsoleReporter::ABORTED_MESSAGE, @output.string)
   end
 end

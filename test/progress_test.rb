@@ -131,14 +131,16 @@ class ProgressTest < Test::Unit::TestCase
                         progress.getStatus)
   end
 
-  def test_when_all_progress_have_been_made_then_additional_increments_are_ignored
+  def test_when_all_progress_have_been_made_then_additional_increments_raise_exception
     progress = PBar::Progress.new(100, @timer)
     progress.start
     progress.increment(100)
-
-    progress.increment(1)
+    
     assert_equal(PBar::Status.new(:donePercent => 100, :todoPercent => 0, :timeElapsed => 1),
                         progress.getStatus)
+    assert_raise(RuntimeError) do
+      progress.increment
+    end
   end
   
   def test_when_negative_or_zero_values_are_provided_for_total_then_exception_is_raised
@@ -167,7 +169,7 @@ class ProgressTest < Test::Unit::TestCase
       reporter.statuses)
   end
   
-  def test_when_one_listener_is_added_then_it_is_notified_of_progress_finish_progress_has_all_been_made
+  def test_when_one_listener_is_added_then_it_is_notified_of_progress_finish_once_progress_has_all_been_made
     reporter = InMemoryReporter.new
     progress = PBar::Progress.new(1, @timer)
     progress.listeners << reporter
@@ -179,16 +181,109 @@ class ProgressTest < Test::Unit::TestCase
       [PBar::Status.new(:donePercent => 100, :todoPercent => 0, :timeElapsed => 1)],
       reporter.statuses)
     assert(reporter.finished)
+    assert(progress.finished)
+  end
+  
+  def test_when_last_increment_exceeds_total_then_exception_is_raised
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(1, @timer)
+    progress.listeners << reporter
+
+    progress.start
+
+    assert_raise(RuntimeError) do 
+        progress.increment(2)
+    end
+  end
+  
+  def test_when_increment_finished_increment_sequence_occurs_then_last_increment_raises_exception
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(1, @timer)
+    progress.listeners << reporter
+
+    progress.start
+    progress.increment
+    
+    assert(reporter.finished)
+    assert(progress.finished)
+    assert_raise(RuntimeError) do 
+        progress.increment
+    end
   end
 
-  #TODO: Test that notification on finish is done only once
-  #TODO: increment, finished, increment not allowed
-  #TODO: increment, finished, abort not allowed
+  def test_when_increment_finished_abort_sequence_occurs_then_abort_raises_exception
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(1, @timer)
+    progress.listeners << reporter
+
+    progress.start
+    progress.increment
   
-  #TODO: Test aborting a progress
-  #TODO: abort, abort not allowed
-  #TODO: increment, abort, increment not allowed
-  #TODO: increment, abort, finished not allowed
+    assert(reporter.finished)
+    assert(progress.finished)
+    assert_raise(RuntimeError) do 
+        progress.abort
+    end
+  end
+
+  def test_when_progress_is_aborted_then_listeners_are_notified
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(1, @timer)
+    progress.listeners << reporter
+
+    progress.start
+    progress.abort
+
+    assert(reporter.aborted)
+    assert(progress.aborted)
+  end
+
+  def test_when_abort_abort_sequence_occurs_then_last_abort_raises_exception
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(1, @timer)
+    progress.listeners << reporter
+
+    progress.start
+    progress.abort
+
+    assert(reporter.aborted)
+    assert(progress.aborted)
+    assert_raise(RuntimeError) do 
+      progress.abort
+    end
+  end
+
+  def test_when_increment_abort_increment_sequence_occurs_then_last_increment_raises_exception
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(3, @timer)
+    progress.listeners << reporter
+
+    progress.start
+    progress.increment
+    progress.abort
+
+    assert(reporter.aborted)
+    assert(progress.aborted)
+    assert_raise(RuntimeError) do 
+      progress.increment
+    end
+  end
+
+  def test_when_increment_abort_finished_sequence_occurs_then_last_increment_raises_exception
+    reporter = InMemoryReporter.new
+    progress = PBar::Progress.new(2, @timer)
+    progress.listeners << reporter
+
+    progress.start
+    progress.increment
+    progress.abort
+
+    assert(reporter.aborted)
+    assert(progress.aborted)
+    assert_raise(RuntimeError) do 
+      progress.increment
+    end
+  end
   
   def test_when_a_few_listeners_are_added_and_a_few_increment_calls_were_made_then_listeners_are_notified_of_calls
     reportersNumber = 5

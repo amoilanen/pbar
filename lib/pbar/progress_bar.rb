@@ -21,14 +21,8 @@ module PBar
 
     MAX_PERCENTS = 100
     
-    attr_reader :listeners
+    attr_reader :listeners, :aborted, :finished, :total, :timer
 
-    #TODO: Write tests for assigning @timer to a default value?
-    #TODO: Write tests for block passing:
-    #No block passed
-    #Block of the 0 arity passed
-    #Block of arity 1 passed
-    #Block of the wrong arity passed  
     def self.progress(total, timer = Timer.new, &block)
       progress = Progress.new(total, timer)
       if block_given?
@@ -46,6 +40,8 @@ module PBar
 
       @done = 0
       @listeners = []
+      @finished = false
+      @aborted = false
     end
     
     def start
@@ -53,23 +49,21 @@ module PBar
     end
   
     def increment(done = 1)
+      raise if finishedOrAborted
       raise if done <= 0
-      if @done + done <= @total
-        @done = @done + done
-        listeners.each {|listener| listener.onStatus(getStatus)}
-      end
-      
-      if @done >= @total
-        #TODO: Test this branch, test that it is called when all the progress have been made
-        #@done = @total
-        #@done > @total
-        #Is not called when @done < @total
+      @done = @done + done
+      raise "'done' cannot be more than 'total'" if @done > @total      
+
+      listeners.each {|listener| listener.onStatus(getStatus)}
+      if @done == @total
+        @finished = true
         listeners.each {|listener| listener.onFinished}
       end
     end
 
-    #TODO: Test this method, how does in interact with other methods and their potential invokations?
     def abort
+      raise if finishedOrAborted
+      @aborted = true
       listeners.each {|listener| listener.onAborted}
     end
     
@@ -81,6 +75,12 @@ module PBar
       donePercent = percentDone.ceil
       todoPercent = MAX_PERCENTS - donePercent
       Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :timeElapsed => @timer.elapsed)
+    end
+    
+    private
+    
+    def finishedOrAborted
+      @finished || @aborted
     end
   end
   
@@ -170,29 +170,28 @@ module PBar
   end
   
   class ConsoleReporter
-    
+
     BACKSPACE = "\b"
     BLANK = " "
-    
-    #TODO: Get rid of the two default parameters. Is using a map a better option?
-    def initialize(statusRenderer = ConsoleStatusRenderer.new, output = STDOUT)
-      @statusRenderer = statusRenderer 
-      @output = output
+    ABORTED_MESSAGE = "Aborted!"
+
+    def initialize(options = nil)
+      options = options || {}
+      @statusRenderer = options[:statusRenderer] || ConsoleStatusRenderer.new
+      @output = options[:output] || STDOUT
       @symbolsToErase = 0
     end
 
     def onStatus(status)
       print(status)
     end
-    
-    #TODO: Test this method?
+
     def onFinished
       clearCurrentLine
     end
-    
-    #TODO: Test this method?
+
     def onAborted
-      @output.print("Aborted!")
+      @output.print(ABORTED_MESSAGE)
     end
     
     def print(status)

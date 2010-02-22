@@ -19,7 +19,7 @@
 
 - Added more examples, one of them for a concurrent update of the progress from multiple threads
 - Made the classes use some Ruby specific features in order for them to look less Java-like
-- Usability for the client code: shortcuts and syntactic sugar.Too many classes needed to be constructed
+- Usability for the client code improved.Too many classes needed to be constructed
 in order to use the library and the API was too low level 
 
 TODO:
