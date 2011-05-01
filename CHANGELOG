@@ -1,7 +1,13 @@
-05/01
+05/01/2011
 
 - Removed the unnecessary 'test' task from Rakefile as echoe already includes it
 - Removing tabulation from the source files
 - Submitting the Eclipse project settings (Eclipse DLTK is used for development)
 - Renaming the classes and the module to reflect their purposes in a clearer way
 - Splitting the class Progress so that it has a single responsibility: computing the current status
+- Support for adding multiple listeners to Progress
+
+TODO:
+- Making the classes use some Ruby specific features in order for them to look less Java-like
+- Write tests for ConsoleReporter
+- Make ConsoleReporter report on Windows

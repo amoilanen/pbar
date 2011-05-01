@@ -15,7 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'pbar/progress_bar'
+#require 'pbar/progress_bar'
+require File.expand_path(File.dirname(__FILE__) + '/../lib/pbar/progress_bar.rb')
 require 'test/unit'
 
 class FixedTimeTimer
@@ -31,6 +32,19 @@ class FixedTimeTimer
   end
 end
 
+class InMemoryReporter
+  
+  attr_reader :statuses
+  
+  def initialize
+    @statuses = []
+  end
+  
+  def onStatus(status)
+    statuses << status
+  end
+end
+
 class ProgressTest < Test::Unit::TestCase
  
   def setup
@@ -38,90 +52,177 @@ class ProgressTest < Test::Unit::TestCase
   end
 
   def test_when_no_increment_calls_were_made_then_progress_is_zero
-    @bar = PBar::Progress.new(:total => 1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
-    @bar.start
+    @progress = PBar::Progress.new(:total => 1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
     assert_equal(PBar::Status.new(:donePercent => 0, :todoPercent => 100, :speed => 0), 
-                       @bar.getStatus)
+                       @progress.getStatus)
   end
   
   def test_when_a_few_calls_to_increment_have_been_made_then_it_is_reflected_in_status
-    @bar = PBar::Progress.new(:total => 2, :unitsPerItem => 1, :unitName => "", :timer => @timer)
-    @bar.start
-    @bar.increment
+    @progress = PBar::Progress.new(:total => 2, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
+    @progress.increment
     assert_equal(PBar::Status.new(:donePercent => 50, :todoPercent => 50, :speed => 1),
-                        @bar.getStatus)
+                        @progress.getStatus)
   end
   
   def test_when_time_passes_and_no_calls_to_increment_are_made_then_speed_in_the_resulting_status_changes
-    @bar = PBar::Progress.new(:total => 100, :unitsPerItem => 1, :unitName => "", :timer => @timer)
-    @bar.increment(20)
+    @progress = PBar::Progress.new(:total => 100, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.increment(20)
     [2, 4, 5, 10, 20].each do |time_elapsed|
       @timer.set(time_elapsed)
       assert_equal(PBar::Status.new(:donePercent => 20, :todoPercent => 80, :speed => 20 / time_elapsed),
-                        @bar.getStatus)
+                        @progress.getStatus)
     end
   end
 
-  #TODO: Test the case when both increment is called and time passes 
+  def test_when_time_passes_and_no_calls_to_increment_are_made_then_speed_in_the_resulting_status_changes
+    @progress = PBar::Progress.new(:total => 10, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    
+    @progress.increment(4)
+    @timer.set(2)
+    assert_equal(PBar::Status.new(:donePercent => 40, :todoPercent => 60, :speed => 2),
+                        @progress.getStatus)
+
+    @progress.increment(2)
+    @timer.set(6)
+    assert_equal(PBar::Status.new(:donePercent => 60, :todoPercent => 40, :speed => 1),
+                        @progress.getStatus)
+  end
+
+  def test_when_increments_other_than_1_are_made_then_they_are_reflected_in_calculated_status
+    @progress = PBar::Progress.new(:total => 4, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
+    
+    @progress.increment
+    assert_equal(PBar::Status.new(:donePercent => 25, :todoPercent => 75, :speed => 1),
+                        @progress.getStatus)
+    @progress.increment(3)
+    assert_equal(PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => 4),
+                        @progress.getStatus)
+  end
+  
+  def test_when_increment_with_negative_or_zero_argument_is_called_then_an_exception_is_raised
+    @progress = PBar::Progress.new(:total => 1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
+    
+    assert_raise(RuntimeError) do
+      @progress.increment(0)
+    end
+    assert_raise(RuntimeError) do
+      @progress.increment(-1)
+    end
+  end
   
   def test__when_units_per_item_is_specified_then_it_is_used_when_computing_speed
-    @bar = PBar::Progress.new(:total => 2, :unitsPerItem => 100, :unitName => "", :timer => @timer)
-    @bar.start
-    @bar.increment
+    @progress = PBar::Progress.new(:total => 2, :unitsPerItem => 100, :unitName => "", :timer => @timer)
+    @progress.start
+    @progress.increment
     assert_equal(PBar::Status.new(:donePercent => 50, :todoPercent => 50, :speed => 100),
-                        @bar.getStatus)
+                        @progress.getStatus)
   end
 
   def test_when_all_progress_have_been_made_then_it_is_reflected_in_status
-    @bar = PBar::Progress.new(:total =>100, :unitsPerItem => 1, :unitName => "", :timer => @timer)
-    @bar.start
-    @bar.increment(100)
+    @progress = PBar::Progress.new(:total => 100, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
+    @progress.increment(100)
     assert_equal(PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => 100),
-                        @bar.getStatus)
+                        @progress.getStatus)
   end
 
   def test_when_all_progress_have_been_made_then_additional_increments_are_ignored
-    @bar = PBar::Progress.new(:total =>100, :unitsPerItem => 1, :unitName => "", :timer => @timer)
-    @bar.start
-    @bar.increment(100)
+    @progress = PBar::Progress.new(:total => 100, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
+    @progress.increment(100)
 
-    @bar.increment(1)
+    @progress.increment(1)
     assert_equal(PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => 100),
-                        @bar.getStatus)
+                        @progress.getStatus)
   end
 
   def test_when_no_time_elapsed_then_status_is_calculated_correctly
-    @bar = PBar::Progress.new(:total =>1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
-    @bar.start
-    @bar.increment
+    @progress = PBar::Progress.new(:total => 1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.start
+    @progress.increment
     @timer.set(0)
-    assert_equal(PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => "n/a"), 
-                       @bar.getStatus)
+    assert_equal(PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => PBar::UNKNOWN_SPEED), 
+                       @progress.getStatus)
   end
-
+  
   def test_negative_or_zero_values_not_allowed_for_total_unitsPerItem
     assert_raise(RuntimeError) do 
-      PBar::Progress.new(:total =>0, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+      PBar::Progress.new(:total => 0, :unitsPerItem => 1, :unitName => "", :timer => @timer)
     end
     assert_raise(RuntimeError) do 
-      PBar::Progress.new(:total =>-1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+      PBar::Progress.new(:total => -1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
     end
     assert_raise(RuntimeError) do 
-      PBar::Progress.new(:total =>1, :unitsPerItem => 0, :unitName => "", :timer => @timer)
+      PBar::Progress.new(:total => 1, :unitsPerItem => 0, :unitName => "", :timer => @timer)
     end
     assert_raise(RuntimeError) do 
-      PBar::Progress.new(:total =>1, :unitsPerItem => -1, :unitName => "", :timer => @timer)
+      PBar::Progress.new(:total => 1, :unitsPerItem => -1, :unitName => "", :timer => @timer)
     end
   end
   
-  #TODO: Test that progress listeners are notified
-  #TODO: Test that progress listeners are still notified even when the finish is reached
- end
- 
- #TODO: Test that different reporters are notified:
- #- no listeners
- #- one listener (by default ConsoleReporter)
- #- several listeners
+  def test_when_one_listener_is_added_and_a_few_increment_calls_were_made_then_listener_is_notified_of_calls
+    reporter = InMemoryReporter.new
+    @progress = PBar::Progress.new(:total => 10, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.listeners << reporter 
+
+    @progress.start
+    (1..3).each do
+      @progress.increment
+    end
+    
+    assert_equal(
+      [PBar::Status.new(:donePercent => 10, :todoPercent => 90, :speed => 1),
+        PBar::Status.new(:donePercent => 20, :todoPercent => 80, :speed => 2),
+        PBar::Status.new(:donePercent => 30, :todoPercent => 70, :speed => 3)],
+      reporter.statuses)
+  end
+  
+  def test_when_one_listener_is_added_then_it_is_notified_even_after_progress_has_all_been_made
+    reporter = InMemoryReporter.new
+    @progress = PBar::Progress.new(:total => 1, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    @progress.listeners << reporter
+
+    @progress.start
+    @progress.increment
+    @progress.increment
+    
+    assert_equal(
+      [PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => 1),
+        PBar::Status.new(:donePercent => 100, :todoPercent => 0, :speed => 1)],
+      reporter.statuses)
+  end
+
+  def test_when_a_few_listeners_are_added_and_a_few_increment_calls_were_made_then_listeners_are_notified_of_calls
+    reportersNumber = 5
+    reporters = [] 
+    (1..reportersNumber).each do |i|
+      reporters[i] = InMemoryReporter.new
+    end
+    
+    @progress = PBar::Progress.new(:total => 10, :unitsPerItem => 1, :unitName => "", :timer => @timer)
+    
+    (1..reportersNumber).each do |i|
+      @progress.listeners << reporters[i]
+    end
+
+    @progress.start
+    (1..3).each do
+      @progress.increment
+    end
+  
+    (1..reportersNumber).each do |i|
+      assert_equal(
+        [PBar::Status.new(:donePercent => 10, :todoPercent => 90, :speed => 1),
+          PBar::Status.new(:donePercent => 20, :todoPercent => 80, :speed => 2),
+          PBar::Status.new(:donePercent => 30, :todoPercent => 70, :speed => 3)],
+        reporters[i].statuses)
+    end
+  end
+end
  
 class StatusTest < Test::Unit::TestCase
 

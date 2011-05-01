@@ -17,46 +17,47 @@
 
 module PBar
 
+  UNKNOWN_SPEED = "unknown speed"
+  MAX_PERCENTS = 100
+  
   class Progress
   
+    attr_reader :listeners
+    
     def initialize(params)
       @total = params[:total]
       @unitsPerItem = params[:unitsPerItem]
       @unitName = params[:unitName]
       @timer = params[:timer]
-      raise if @total <=0 || @unitsPerItem <= 0
+      raise if @total <= 0 || @unitsPerItem <= 0
       @done = 0
-      @progressListeners = []
-    end
-  
-    def addProgressListener(listener)
-      @progressListeners << listener
+      @listeners = []
     end
   
     def start
       @timer.start
     end
   
-    def increment(done=1)
+    def increment(done = 1)
+      raise if done <= 0
       if @done + done <= @total
         @done = @done + done
       end
-      @progress
+      listeners.each {|listener| listener.onStatus(getStatus)}
     end
 
     def percentDone
-      ((1.0 * @done) / (1.0 * @total)) * 100
+      @done.to_f / @total.to_f * MAX_PERCENTS.to_f
     end
 
     def getStatus
       donePercent = percentDone.ceil
-      todoPercent = 100 - donePercent
+      todoPercent = MAX_PERCENTS - donePercent
     
       if @timer.elapsed > 0
-        speed =  (1.0 * @done * @unitsPerItem) / @timer.elapsed
+        speed =  @done.to_f * @unitsPerItem.to_f / @timer.elapsed.to_f
       else
-        #TODO: Extract this as a constant and update the corresponding test
-        speed = "n/a"
+        speed = PBar::UNKNOWN_SPEED
       end
       Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed)
     end
@@ -107,7 +108,7 @@ module PBar
       @symbolsToErase = 0
     end
 
-    def report(status)
+    def onStatus(status)
       printProgress(status)
     end
 
