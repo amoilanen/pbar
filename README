@@ -1,0 +1,2 @@
+Simple utility for Ruby that enables a progress bar functionality. I tested it only on Linux, so there may be some issues
+with Windows Ruby installations at the moment.
