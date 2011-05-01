@@ -15,8 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#require 'pbar/progress_bar'
-require File.expand_path(File.dirname(__FILE__) + '/../lib/pbar/progress_bar.rb')
+require 'pbar/progress_bar'
 require 'test/unit'
 
 class FixedTimeTimer

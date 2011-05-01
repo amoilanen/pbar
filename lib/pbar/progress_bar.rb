@@ -59,7 +59,7 @@ module PBar
       else
         speed = PBar::UNKNOWN_SPEED
       end
-      Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed)
+      Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed, :unitName => @unitName)
     end
   end
 
@@ -67,17 +67,18 @@ module PBar
      
     include Comparable
 
-    attr_reader :donePercent, :todoPercent, :speed
+    attr_reader :donePercent, :todoPercent, :speed, :unitName
      
-    def initialize(numbers)
-      raise if numbers[:donePercent] < 0 || numbers[:todoPercent] < 0
-      @donePercent = numbers[:donePercent]
-      @todoPercent = numbers[:todoPercent]
-      @speed = numbers[:speed]
+    def initialize(params)
+      raise if params[:donePercent] < 0 || params[:todoPercent] < 0
+      @donePercent = params[:donePercent]
+      @todoPercent = params[:todoPercent]
+      @unitName = params[:unitName].nil? ? "" : params[:unitName]
+      @speed = params[:speed]
     end
 
     def comparable_fields
-      [donePercent, todoPercent, speed]
+      [donePercent, todoPercent, speed, unitName]
     end
  
     def <=>(other)
@@ -104,12 +105,12 @@ module PBar
     @@backspaceSymbol = "\b"
     @@blankSymbol = " "
 
-    def initialize
+    def initialize()
       @symbolsToErase = 0
     end
 
     def onStatus(status)
-      printProgress(status)
+      print(status)
     end
 
     def clearCurrentLine
@@ -124,7 +125,7 @@ module PBar
     def print(status)
       clearCurrentLine
       toPrint = "[" + (@@doneSymbol * status.donePercent) + (@@todoSymbol * status.todoPercent)  + "]"
-      toPrint = toPrint + " " + ('%.2f' % status.speed) + " " + @unitName + "/s"
+      toPrint = toPrint + " " + ('%.2f' % status.speed) + " " + status.unitName + "/s"
       @symbolsToErase = toPrint.length
       $stdout.print(toPrint)
       $stdout.flush
@@ -132,16 +133,20 @@ module PBar
   end
 end
 
+#TODO: This example should be somewhere in the documentation provided with the gem
 =begin
 items = 10
-bar = Progress::Bar.new(:total => items, :unitsPerItem => 1024, :unitName => "KBit", :timer => Progress::Timer.new)
+
+bar = PBar::Progress.new(:total => items, :unitsPerItem => 1024, :unitName => "KBit", :timer => PBar::Timer.new)
+consoleReporter = PBar::ConsoleReporter.new
+bar.listeners << consoleReporter
+
 bar.start
 sleep 1
 
 items.times do |i|
   bar.increment
-  bar.reportProgress
   sleep 1
 end
-bar.clearCurrentLine
+consoleReporter.clearCurrentLine
 =end
