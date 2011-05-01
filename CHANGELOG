@@ -6,8 +6,14 @@
 - Renaming the classes and the module to reflect their purposes in a clearer way
 - Splitting the class Progress so that it has a single responsibility: computing the current status
 - Support for adding multiple listeners to Progress
+- Written tests for ConsoleReporter, StatusRenderer was extracted from it
 
 TODO:
-- Making the classes use some Ruby specific features in order for them to look less Java-like
-- Write tests for ConsoleReporter
+- Make showing of speed in ConsoleReporter optional
+- Make the classes use some Ruby specific features in order for them to look less Java-like
+- Usability for the client code: shortcuts and syntactic sugar. At the moment too many classes should be constructed
+and the API is too low level
 - Make ConsoleReporter report on Windows
+- Synchronization support so that the progress can be updated and rendered from multiple threads of execution
+- Use some standard library to mock out calls in the test progress_bar_test.rb
+- Split up the test progress_bar_test.rb into several files

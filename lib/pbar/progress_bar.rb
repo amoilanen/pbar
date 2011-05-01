@@ -16,12 +16,12 @@
 # limitations under the License.
 
 module PBar
-
-  UNKNOWN_SPEED = "unknown speed"
-  MAX_PERCENTS = 100
   
   class Progress
   
+    UNKNOWN_SPEED = "unknown speed"
+    MAX_PERCENTS = 100
+    
     attr_reader :listeners
     
     def initialize(params)
@@ -57,7 +57,7 @@ module PBar
       if @timer.elapsed > 0
         speed =  @done.to_f * @unitsPerItem.to_f / @timer.elapsed.to_f
       else
-        speed = PBar::UNKNOWN_SPEED
+        speed = UNKNOWN_SPEED
       end
       Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed, :unitName => @unitName)
     end
@@ -97,38 +97,68 @@ module PBar
     end
   end
 
+  class ConsoleStatusRenderer
+    
+    DEFAULT_SYMBOLS = {:done => "#", :todo => " "}
+    
+    attr_reader :symbols
+      
+    def initialize
+      @symbols = DEFAULT_SYMBOLS
+    end
+    
+    def render(status)
+      rendered = "[" + (symbols[:done] * status.donePercent) + (symbols[:todo] * status.todoPercent)  + "]"
+      rendered = rendered + " " + ('%.2f' % status.speed) + " " + status.unitName + "/s"
+    end
+    
+    def useSymbols(customSymbols)
+      @symbols = @symbols.merge(customSymbols)
+    end
+  end
+  
   class ConsoleReporter
-
-    #TODO: Make these constants parameterizable
-    @@doneSymbol = "#"
-    @@todoSymbol = " "
-    @@backspaceSymbol = "\b"
-    @@blankSymbol = " "
-
-    def initialize()
+    
+    BACKSPACE = "\b"
+    BLANK = " "
+    
+    def initialize(statusRenderer, output=STDOUT)
+      @statusRenderer = statusRenderer 
+      @output = output
       @symbolsToErase = 0
     end
 
     def onStatus(status)
       print(status)
     end
-
-    def clearCurrentLine
-      $stdout.print(@@backspaceSymbol * @symbolsToErase)
-      $stdout.print(@@blankSymbol * @symbolsToErase)
-      $stdout.print(@@backspaceSymbol * @symbolsToErase)
-      $stdout.flush
-    end
-
-    private
-
+    
     def print(status)
       clearCurrentLine
-      toPrint = "[" + (@@doneSymbol * status.donePercent) + (@@todoSymbol * status.todoPercent)  + "]"
-      toPrint = toPrint + " " + ('%.2f' % status.speed) + " " + status.unitName + "/s"
-      @symbolsToErase = toPrint.length
-      $stdout.print(toPrint)
-      $stdout.flush
+      status = @statusRenderer.render(status)
+      printStatusString(status)
+    end
+    
+    def clearCurrentLine
+      returnCursorToStringStart
+      erasePreviousStatus
+      returnCursorToStringStart
+      @output.flush
+    end
+    
+    private
+        
+    def printStatusString(status)
+      @output.print(status)
+      @output.flush
+      @symbolsToErase = status.length
+    end
+    
+    def returnCursorToStringStart
+      @output.print(BACKSPACE * @symbolsToErase)
+    end
+    
+    def erasePreviousStatus
+      @output.print(BLANK * @symbolsToErase)
     end
   end
 end
@@ -138,7 +168,8 @@ end
 items = 10
 
 bar = PBar::Progress.new(:total => items, :unitsPerItem => 1024, :unitName => "KBit", :timer => PBar::Timer.new)
-consoleReporter = PBar::ConsoleReporter.new
+renderer = PBar::ConsoleStatusRenderer.new
+consoleReporter = PBar::ConsoleReporter.new(renderer)
 bar.listeners << consoleReporter
 
 bar.start
