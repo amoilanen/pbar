@@ -1,11 +1,11 @@
 require "rake/testtask"
 require "echoe"
 
-Echoe.new('pbar', '0.1') do |p|
-  p.description = "Progress tracking command line utilities"
-  p.url = "https://github.com/antivanov/pbar"
-  p.author = "Anton Ivanov"
-  p.email = "anton.al.ivanov@gmail.com"
-  p.ignore_pattern = []
-  p.development_dependencies = []
+Echoe.new('pbar', '0.1') do |task|
+  task.description = "Progress tracking command line utilities"
+  task.url = "https://github.com/antivanov/pbar"
+  task.author = "Anton Ivanov"
+  task.email = "anton.al.ivanov@gmail.com"
+  task.ignore_pattern = []
+  task.development_dependencies = []
 end

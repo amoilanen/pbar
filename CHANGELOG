@@ -1,0 +1,7 @@
+05/01
+
+- Removed the unnecessary 'test' task from Rakefile as echoe already includes it
+- Removing tabulation from the source files
+- Submitting the Eclipse project settings (Eclipse DLTK is used for development)
+- Renaming the classes and the module to reflect their purposes in a clearer way
+- Splitting the class Progress so that it has a single responsibility: computing the current status
