@@ -15,104 +15,120 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module Progress
+module PBar
 
-class Bar
+  class Progress
   
-  @@doneSymbol = "#"
-  @@todoSymbol = " "
-  @@backspaceSymbol = "\b"
-  @@blankSymbol = " "
-  
-  def initialize(params)
+    def initialize(params)
       @total = params[:total]
       @unitsPerItem = params[:unitsPerItem]
       @unitName = params[:unitName]
       @timer = params[:timer]
       raise if @total <=0 || @unitsPerItem <= 0
       @done = 0
-      @symbolsToErase = 0
-  end
-  
-  def start
-	@timer.start
-  end
-  
-  def increment(done=1)
-	if @done + done <= @total
-	   @done = @done + done
-	end
-  end
-
-  def percentDone
-	((1.0 * @done) / (1.0 * @total)) * 100
-  end
-
-  def getStatus
-    donePercent = percentDone.ceil
-    todoPercent = 100 - donePercent
-    if @timer.elapsed > 0
-      speed =  (1.0 * @done * @unitsPerItem) / @timer.elapsed
-    else
-      speed = "n/a"
+      @progressListeners = []
     end
-    Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed)
+  
+    def addProgressListener(listener)
+      @progressListeners << listener
+    end
+  
+    def start
+      @timer.start
+    end
+  
+    def increment(done=1)
+      if @done + done <= @total
+        @done = @done + done
+      end
+      @progress
+    end
+
+    def percentDone
+      ((1.0 * @done) / (1.0 * @total)) * 100
+    end
+
+    def getStatus
+      donePercent = percentDone.ceil
+      todoPercent = 100 - donePercent
+    
+      if @timer.elapsed > 0
+        speed =  (1.0 * @done * @unitsPerItem) / @timer.elapsed
+      else
+        #TODO: Extract this as a constant and update the corresponding test
+        speed = "n/a"
+      end
+      Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed)
+    end
   end
 
-  def reportProgress
-    status = getStatus
-    printProgress(status)
-  end
-
-  def clearCurrentLine
-    $stdout.print(@@backspaceSymbol * @symbolsToErase)
-    $stdout.print(@@blankSymbol * @symbolsToErase)
-    $stdout.print(@@backspaceSymbol * @symbolsToErase)
-    $stdout.flush
-  end
-
-private
-
-  def printProgress(status)
-	clearCurrentLine
-	toPrint = "[" + (@@doneSymbol * status.donePercent) + (@@todoSymbol * status.todoPercent)  + "]"
-	toPrint = toPrint + " " + ('%.2f' % status.speed) + " " + @unitName + "/s"
-	@symbolsToErase = toPrint.length
-	$stdout.print(toPrint)
-	$stdout.flush
-  end
-end
-
-class Status
-     attr_reader :donePercent, :todoPercent, :speed
+  class Status
      
-     def initialize(numbers)
-	raise if numbers[:donePercent] < 0 || numbers[:todoPercent] < 0
-	@donePercent = numbers[:donePercent]
-	@todoPercent = numbers[:todoPercent]
-	@speed = numbers[:speed]
-     end
+    include Comparable
 
-     def ==(other)
-	donePercent = other.donePercent && todoPercent == other.todoPercent && speed = other.speed
-     end
+    attr_reader :donePercent, :todoPercent, :speed
+     
+    def initialize(numbers)
+      raise if numbers[:donePercent] < 0 || numbers[:todoPercent] < 0
+      @donePercent = numbers[:donePercent]
+      @todoPercent = numbers[:todoPercent]
+      @speed = numbers[:speed]
+    end
 
-     def hash
-	31* (31 * (31 * donePercent + todoPercent) + speed) + 17
-     end
-end
+    def comparable_fields
+      [donePercent, todoPercent, speed]
+    end
+ 
+    def <=>(other)
+      self.comparable_fields <=> other.comparable_fields
+    end
+  end
 
-class Timer 
+  class Timer 
 
     def start
-	@startTime = Time.now
+      @startTime = Time.now
     end
 
     def elapsed
-	Time.now - @startTime
+      Time.now - @startTime
     end
-end
+  end
 
+  class ConsoleReporter
+
+    #TODO: Make these constants parameterizable
+    @@doneSymbol = "#"
+    @@todoSymbol = " "
+    @@backspaceSymbol = "\b"
+    @@blankSymbol = " "
+
+    def initialize
+      @symbolsToErase = 0
+    end
+
+    def report(status)
+      printProgress(status)
+    end
+
+    def clearCurrentLine
+      $stdout.print(@@backspaceSymbol * @symbolsToErase)
+      $stdout.print(@@blankSymbol * @symbolsToErase)
+      $stdout.print(@@backspaceSymbol * @symbolsToErase)
+      $stdout.flush
+    end
+
+    private
+
+    def print(status)
+      clearCurrentLine
+      toPrint = "[" + (@@doneSymbol * status.donePercent) + (@@todoSymbol * status.todoPercent)  + "]"
+      toPrint = toPrint + " " + ('%.2f' % status.speed) + " " + @unitName + "/s"
+      @symbolsToErase = toPrint.length
+      $stdout.print(toPrint)
+      $stdout.flush
+    end
+  end
 end
 
 =begin
