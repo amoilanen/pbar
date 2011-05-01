@@ -83,7 +83,7 @@ class ProgressTest < Test::Unit::TestCase
     end
   end
 
-  def test_when_time_passes_and_no_calls_to_increment_are_made_then_speed_in_the_resulting_status_changes
+  def test_when_time_passes_and_a_few_calls_to_increment_are_made_then_the_resulting_status_changes
     progress = PBar::Progress.new(:total => 10, :unitsPerItem => 1, :unitName => "", :timer => @timer)
     
     progress.increment(4)
@@ -121,7 +121,7 @@ class ProgressTest < Test::Unit::TestCase
     end
   end
   
-  def test__when_units_per_item_is_specified_then_it_is_used_when_computing_speed
+  def test_when_units_per_item_is_specified_then_it_is_used_when_computing_speed
     progress = PBar::Progress.new(:total => 2, :unitsPerItem => 100, :unitName => "", :timer => @timer)
     progress.start
     progress.increment
