@@ -17,3 +17,4 @@ and the API is too low level
 - Synchronization support so that the progress can be updated and rendered from multiple threads of execution
 - Use some standard library to mock out calls in the test progress_bar_test.rb
 - Split up the test progress_bar_test.rb into several files
+- Write an rDoc file

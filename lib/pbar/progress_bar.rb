@@ -162,22 +162,3 @@ module PBar
     end
   end
 end
-
-#TODO: This example should be somewhere in the documentation provided with the gem
-=begin
-items = 10
-
-bar = PBar::Progress.new(:total => items, :unitsPerItem => 1024, :unitName => "KBit", :timer => PBar::Timer.new)
-renderer = PBar::ConsoleStatusRenderer.new
-consoleReporter = PBar::ConsoleReporter.new(renderer)
-bar.listeners << consoleReporter
-
-bar.start
-sleep 1
-
-items.times do |i|
-  bar.increment
-  sleep 1
-end
-consoleReporter.clearCurrentLine
-=end
