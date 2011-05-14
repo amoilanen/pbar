@@ -19,10 +19,15 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
 
 require 'pbar/progress_bar'
 
+unitName = "KBit"
+unitsPerItem = 1024
+
 items = 10
 
-bar = PBar::Progress.new(:total => items, :unitsPerItem => 1024, :unitName => "KBit", :timer => PBar::Timer.new)
+bar = PBar::Progress.new(:total => items, :timer => PBar::Timer.new)
 renderer = PBar::ConsoleStatusRenderer.new
+renderer.showSpeed(unitName, unitsPerItem)
+
 consoleReporter = PBar::ConsoleReporter.new(renderer)
 bar.listeners << consoleReporter
 

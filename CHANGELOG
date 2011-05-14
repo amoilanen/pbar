@@ -10,8 +10,10 @@
 
 05/14/2011
 
-- Split up the test progress_bar_test.rb into several files
-- Make showing of speed in ConsoleReporter optional
+- Split up the test progress_bar_test.rb into several tests to improve maintainability
+- Made showing of speed in ConsoleReporter optional
+- Speed calculation is now done in status instead of progress, small re-factoring and re-design
+- Using 'flexmock' to mock out dependencies in tests where it makes sense
 
 TODO:
 

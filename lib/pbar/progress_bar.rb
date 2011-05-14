@@ -18,18 +18,16 @@
 module PBar
   
   class Progress
-  
-    UNKNOWN_SPEED = "unknown speed"
+
     MAX_PERCENTS = 100
     
     attr_reader :listeners
     
     def initialize(params)
       @total = params[:total]
-      @unitsPerItem = params[:unitsPerItem]
-      @unitName = params[:unitName]
+      raise if @total <= 0
       @timer = params[:timer]
-      raise if @total <= 0 || @unitsPerItem <= 0
+
       @done = 0
       @listeners = []
     end
@@ -53,36 +51,49 @@ module PBar
     def getStatus
       donePercent = percentDone.ceil
       todoPercent = MAX_PERCENTS - donePercent
-    
-      if @timer.elapsed > 0
-        speed =  @done.to_f * @unitsPerItem.to_f / @timer.elapsed.to_f
-      else
-        speed = UNKNOWN_SPEED
-      end
-      Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed, :unitName => @unitName)
+      Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :timeElapsed => @timer.elapsed)
     end
   end
   
   class Status
-     
+    
     include Comparable
 
-    attr_reader :donePercent, :todoPercent, :speed, :unitName
+    attr_reader :donePercent, :todoPercent, :timeElapsed
      
     def initialize(params)
-      raise if params[:donePercent] < 0 || params[:todoPercent] < 0
-      @donePercent = params[:donePercent]
-      @todoPercent = params[:todoPercent]
-      @unitName = params[:unitName].nil? ? "" : params[:unitName]
-      @speed = params[:speed]
+      @donePercent = checkNotNegative(params[:donePercent])
+      @todoPercent = checkNotNegative(params[:todoPercent])
+      @timeElapsed = checkNotNegative(params[:timeElapsed])
     end
-
+    
+    def speed(unitsPerPercent = 1)
+      unitsPerPercent = checkPositive(unitsPerPercent)
+      timeElapsed = checkPositive(@timeElapsed)
+      donePercent.to_f * unitsPerPercent.to_f / timeElapsed.to_f
+    end
+    
     def comparable_fields
-      [donePercent, todoPercent, speed, unitName]
+      [donePercent, todoPercent, timeElapsed]
     end
  
     def <=>(other)
       self.comparable_fields <=> other.comparable_fields
+    end
+    
+    private
+    
+    def checkNotNegative(value)
+      checkThat(value) {|x| x >= 0}
+    end
+    
+    def checkPositive(value)
+      checkThat(value) {|x| x > 0}
+    end
+    
+    def checkThat(value)
+      raise if value.nil? || !yield(value)
+      value
     end
   end
 
@@ -111,14 +122,17 @@ module PBar
     def render(status)
       rendered = "[" + (symbols[:done] * status.donePercent) + (symbols[:todo] * status.todoPercent)  + "]"
       if @showSpeed 
-        rendered + " " + ('%.2f' % status.speed) + " " + status.unitName + "/s"
+        rendered + " " + ('%.2f' % status.speed(@unitsPerPercent)) + " " + @unitName + "/s"
       else
         rendered
       end
     end
-    
-    def showSpeed
+
+    def showSpeed(unitName, unitsPerPercent)
+      raise if unitName.nil? || unitsPerPercent.nil?
       @showSpeed = true
+      @unitName = unitName
+      @unitsPerPercent = unitsPerPercent
     end
     
     def useSymbols(customSymbols)
