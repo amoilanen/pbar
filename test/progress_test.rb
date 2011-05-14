@@ -17,20 +17,6 @@
 
 require 'pbar/progress_bar'
 require 'test/unit'
-require 'stringio'
-
-class FixedTimeTimer
-
-  attr_reader :elapsed
-  
-  def start
-  end
-
-  def set(elapsed)
-    @elapsed = elapsed
-    self
-  end
-end
 
 class InMemoryReporter
   
@@ -45,10 +31,16 @@ class InMemoryReporter
   end
 end
 
-class IndentityRenderer
+class FixedTimeTimer
+
+  attr_reader :elapsed
   
-  def render(status)
-    status
+  def start
+  end
+
+  def set(elapsed)
+    @elapsed = elapsed
+    self
   end
 end
 
@@ -228,104 +220,5 @@ class ProgressTest < Test::Unit::TestCase
           PBar::Status.new(:donePercent => 30, :todoPercent => 70, :speed => 3)],
         reporters[i].statuses)
     end
-  end
-end
- 
-class StatusTest < Test::Unit::TestCase
-
-   def test_when_donePercent_todoPercent_are_less_than_zero_then_exception_raised
-     assert_raise(RuntimeError) do 
-       PBar::Status.new(:donePercent => -10, :todoPercent => 110, :speed => 0)
-     end
-     assert_raise(RuntimeError) do 
-       PBar::Status.new(:donePercent => 110, :todoPercent => -10, :speed => 0)
-     end
-   end
-
-   def test_when_other_status_has_same_fields_then_statuses_are_equal
-     that = PBar::Status.new(:donePercent => 30, :todoPercent => 40, :speed => 50, :unitName => "unitname")
-     this = PBar::Status.new(:donePercent => 30, :todoPercent => 40, :speed => 50, :unitName => "unitname")
-
-     assert_equal(this, that)
-   end
-
-   def test_when_other_status_has_different_fields_then_statuses_are_not_equal
-     this = PBar::Status.new(:donePercent => 30, :todoPercent => 40, :speed => 50, :unitName => "unitname")
-     that = PBar::Status.new(:donePercent => 30, :todoPercent => 20, :speed => 50, :unitName => "unitname")
-  
-     assert_not_equal(this, that)
-   end
-end
-
-class ConsoleReporterTest < Test::Unit::TestCase
-  
-  def setup
-    @output = StringIO.new
-    @renderer = IndentityRenderer.new
-    @reporter = PBar::ConsoleReporter.new(@renderer, @output)
-    backspace = PBar::ConsoleReporter::BACKSPACE
-    blank = PBar::ConsoleReporter::BLANK
-    @status = "abc"
-    @erasingString = "#{backspace * @status.length}#{blank * @status.length}#{backspace * @status.length}"
-  end
-  
-  def test_when_print_is_called_once_then_one_line_is_printed    
-    @reporter.print(@status)
-    
-    assert_equal(@status, @output.string)
-  end
-  
-  def test_when_print_is_called_twice_with_a_line_then_two_lines_are_printed_and_the_first_one_gets_erased
-    @reporter.print(@status)
-    @reporter.print(@status)
-    
-    assert_equal(@status + @erasingString + @status, @output.string)
-  end
-  
-  def test_when_several_lines_are_printed_then_erasing_string_gets_printed_in_between_them
-    @reporter.print(@status)
-    @reporter.print(@status)
-    @reporter.print(@status)
-    
-    assert_equal(@status + @erasingString + @status + @erasingString + @status, @output.string)
-  end
-
-  def test_when_clearCurrentLine_is_called_then_erases_the_last_printed_status
-    @reporter.print(@status)
-    @reporter.clearCurrentLine
-    
-    assert_equal(@status + @erasingString, @output.string)
-  end
-  
-  def test_when_clearCurrentLine_is_called_and_there_is_no_current_printed_status_then_nothing_is_erased
-    @reporter.clearCurrentLine
-    
-    assert_equal("", @output.string)
-  end
-end
-
-class ConsoleStatusRendererTest < Test::Unit::TestCase
-  
-  DONE_PERCENT = 50
-  TODO_PERCENT = 50
-  SPEED = 30
-  UNIT_NAME = "Parrots"
-  
-  def setup
-    @status = PBar::Status.new(:donePercent => DONE_PERCENT, :todoPercent => TODO_PERCENT, :speed => SPEED, :unitName => UNIT_NAME)
-    @renderer = PBar::ConsoleStatusRenderer.new
-  end
-  
-  def test_when_render_is_called_then_status_is_rendered
-    doneSymbol = PBar::ConsoleStatusRenderer::DEFAULT_SYMBOLS[:done]
-    todoSymbol = PBar::ConsoleStatusRenderer::DEFAULT_SYMBOLS[:todo]
-      
-    assert_equal("[#{doneSymbol * DONE_PERCENT}#{todoSymbol * TODO_PERCENT}] #{SPEED}.00 #{UNIT_NAME}/s", @renderer.render(@status))
-  end
-  
-  def test_when_alternative_done_and_todo_symbols_are_provided_then_they_are_used_when_printing_statuses
-    @renderer.useSymbols(:done => '+', :todo => '-')
-
-    assert_equal("[#{'+' * DONE_PERCENT}#{'-' * TODO_PERCENT}] #{SPEED}.00 #{UNIT_NAME}/s", @renderer.render(@status))
   end
 end

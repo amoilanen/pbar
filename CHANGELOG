@@ -8,13 +8,20 @@
 - Support for adding multiple listeners to Progress
 - Written tests for ConsoleReporter, StatusRenderer was extracted from it
 
+05/14/2011
+
+- Split up the test progress_bar_test.rb into several files
+
 TODO:
+
 - Make showing of speed in ConsoleReporter optional
+- Synchronization support so that the progress can be updated and rendered from multiple threads of execution
+
 - Make the classes use some Ruby specific features in order for them to look less Java-like
 - Usability for the client code: shortcuts and syntactic sugar. At the moment too many classes should be constructed
 and the API is too low level
+
 - Make ConsoleReporter report on Windows
-- Synchronization support so that the progress can be updated and rendered from multiple threads of execution
-- Use some standard library to mock out calls in the test progress_bar_test.rb
-- Split up the test progress_bar_test.rb into several files
+- Think about managing dependencies for a gem. Maybe a separate .gemspec file is needed if echoe
+does not work well with dependencies? To be investigated
 - Write an rDoc file
