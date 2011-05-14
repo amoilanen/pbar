@@ -11,10 +11,10 @@
 05/14/2011
 
 - Split up the test progress_bar_test.rb into several files
+- Make showing of speed in ConsoleReporter optional
 
 TODO:
 
-- Make showing of speed in ConsoleReporter optional
 - Synchronization support so that the progress can be updated and rendered from multiple threads of execution
 
 - Make the classes use some Ruby specific features in order for them to look less Java-like

@@ -62,7 +62,7 @@ module PBar
       Status.new(:donePercent => donePercent, :todoPercent => todoPercent, :speed => speed, :unitName => @unitName)
     end
   end
-
+  
   class Status
      
     include Comparable
@@ -105,11 +105,20 @@ module PBar
       
     def initialize
       @symbols = DEFAULT_SYMBOLS
+      @showSpeed = false
     end
     
     def render(status)
       rendered = "[" + (symbols[:done] * status.donePercent) + (symbols[:todo] * status.todoPercent)  + "]"
-      rendered = rendered + " " + ('%.2f' % status.speed) + " " + status.unitName + "/s"
+      if @showSpeed 
+        rendered + " " + ('%.2f' % status.speed) + " " + status.unitName + "/s"
+      else
+        rendered
+      end
+    end
+    
+    def showSpeed
+      @showSpeed = true
     end
     
     def useSymbols(customSymbols)

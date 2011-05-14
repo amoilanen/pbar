@@ -15,7 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'pbar/progress_bar'
+#require 'pbar/progress_bar'
+#TODO: Uncomment
+require File.expand_path(File.dirname(__FILE__) + '/../lib/pbar/progress_bar.rb')
 require 'test/unit'
 
 class ConsoleStatusRendererTest < Test::Unit::TestCase
@@ -27,19 +29,25 @@ class ConsoleStatusRendererTest < Test::Unit::TestCase
   
   def setup
     @status = PBar::Status.new(:donePercent => DONE_PERCENT, :todoPercent => TODO_PERCENT, :speed => SPEED, :unitName => UNIT_NAME)
+    @doneSymbol = PBar::ConsoleStatusRenderer::DEFAULT_SYMBOLS[:done]
+    @todoSymbol = PBar::ConsoleStatusRenderer::DEFAULT_SYMBOLS[:todo]
     @renderer = PBar::ConsoleStatusRenderer.new
   end
   
   def test_when_render_is_called_then_status_is_rendered
-    doneSymbol = PBar::ConsoleStatusRenderer::DEFAULT_SYMBOLS[:done]
-    todoSymbol = PBar::ConsoleStatusRenderer::DEFAULT_SYMBOLS[:todo]
-      
-    assert_equal("[#{doneSymbol * DONE_PERCENT}#{todoSymbol * TODO_PERCENT}] #{SPEED}.00 #{UNIT_NAME}/s", @renderer.render(@status))
+    @renderer.showSpeed
+
+    assert_equal("[#{@doneSymbol * DONE_PERCENT}#{@todoSymbol * TODO_PERCENT}] #{SPEED}.00 #{UNIT_NAME}/s", @renderer.render(@status))
+  end
+  
+  def test_when_speed_showing_is_not_switched_on_then_it_is_not_shown
+    assert_equal("[#{@doneSymbol * DONE_PERCENT}#{@todoSymbol * TODO_PERCENT}]", @renderer.render(@status))
   end
   
   def test_when_alternative_done_and_todo_symbols_are_provided_then_they_are_used_when_printing_statuses
     @renderer.useSymbols(:done => '+', :todo => '-')
-
+    @renderer.showSpeed
+    
     assert_equal("[#{'+' * DONE_PERCENT}#{'-' * TODO_PERCENT}] #{SPEED}.00 #{UNIT_NAME}/s", @renderer.render(@status))
   end
 end
