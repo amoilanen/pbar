@@ -16,7 +16,6 @@
 # limitations under the License.
 
 require 'pbar/progress_bar'
-require File.expand_path(File.dirname(__FILE__) + '/../lib/pbar/progress_bar.rb')
 require 'test/unit'
 
 class InMemoryReporter
